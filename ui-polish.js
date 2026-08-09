@@ -197,9 +197,17 @@
   function polish(){
     const undo=document.getElementById('undoBtn');
     const redo=document.getElementById('redoBtn');
-    if(undo){undo.textContent='↶';undo.setAttribute('aria-label','Undo last change');undo.removeAttribute('title')}
-    if(redo){redo.textContent='↷';redo.setAttribute('aria-label','Redo last change');redo.removeAttribute('title')}
+    if(undo){
+      if(undo.textContent!=='↶')undo.textContent='↶';
+      if(undo.getAttribute('aria-label')!=='Undo last change')undo.setAttribute('aria-label','Undo last change');
+      if(undo.hasAttribute('title'))undo.removeAttribute('title');
+    }
+    if(redo){
+      if(redo.textContent!=='↷')redo.textContent='↷';
+      if(redo.getAttribute('aria-label')!=='Redo last change')redo.setAttribute('aria-label','Redo last change');
+      if(redo.hasAttribute('title'))redo.removeAttribute('title');
+    }
   }
   polish();
-  new MutationObserver(polish).observe(document.body,{childList:true,subtree:true});
+  new MutationObserver(()=>polish()).observe(document.body,{childList:true,subtree:true});
 })();
