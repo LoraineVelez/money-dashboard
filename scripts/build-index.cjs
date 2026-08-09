@@ -17,8 +17,9 @@ if(!s.includes('.upcominghead'))s=s.replace('@media(max-width:800px)',upcomingSt
 const mobileUpcoming=`@media(max-width:800px){.upcominglayout{grid-template-columns:1fr}.calday{min-height:72px;padding:5px}.calevent small{display:none}.calevent{display:inline-flex;margin-right:2px}.billrow{grid-template-columns:1fr}.billactions{justify-content:space-between}.duelabel{flex:1}.dueinput{width:100%}}\n@media(max-width:520px){.calendarweek,.calendargrid{gap:3px}.calday{min-height:56px;border-radius:9px;padding:4px}.daynum{font-size:10px}.billactions{align-items:stretch;flex-direction:column}.duelabel{display:grid;grid-template-columns:auto 1fr}.paidbtn{width:100%}.upnav{width:100%}.upnav .smallbtn:nth-child(2){flex:1}}\n`;
 if(!s.includes('.billactions{align-items:stretch'))s=s.replace('@media(prefers-reduced-motion:reduce)',mobileUpcoming+'@media(prefers-reduced-motion:reduce)');
 const prod='<script src="data-static.js?v=20260809a"></script><script src="app.js?v=20260809a"></script><script src="upcoming.js?v=20260809a"></script>';
-if(/<script src="data-v4-0\\.js/.test(s))s=s.replace(/<script src="data-v4-0\\.js[^\\n]*?<script src="app-v5\\.js[^\\n]*?<\\/script>/,prod);
-else if(/<script src="data-static\\.js/.test(s))s=s.replace(/<script src="data-static\\.js[^\\n]*?<script src="app\\.js[^\\n]*?<\\/script>(?:<script src="upcoming\\.js[^\\n]*?<\\/script>)?/,prod);
+let start=s.indexOf('<script src="data-static.js');if(start<0)start=s.indexOf('<script src="data-v4-0.js');
+const end=s.indexOf('</body>');if(start<0||end<0||start>end)throw new Error('Production script replacement failed');
+s=s.slice(0,start)+prod+'\n'+s.slice(end);
 if(!s.includes('data-static.js')||!s.includes('upcoming.js')||s.includes('data-v4-0.js'))throw new Error('Production script replacement failed');
 fs.writeFileSync('candidate.html',s);
 console.log('Wrote candidate.html');
