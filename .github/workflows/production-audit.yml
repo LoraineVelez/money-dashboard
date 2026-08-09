@@ -13,19 +13,32 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build stable production assets
+      - name: Build candidate production assets
         run: |
           node scripts/build-static-data.cjs
           node scripts/build-app.cjs
+          node scripts/build-index.cjs
       - name: Reconcile financial data
         run: node scripts/audit-data.cjs
       - name: Syntax check active app
         run: node --check app.js
-      - name: Commit generated production assets
+      - name: Install browser test dependency
         run: |
-          if [ -z "$(git status --porcelain -- data-static.js app.js)" ]; then exit 0; fi
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Browser smoke test candidate
+        run: |
+          python3 -m http.server 4173 >/tmp/dashboard-http.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 2
+          node scripts/browser-smoke.mjs
+      - name: Publish only after all audits pass
+        run: |
+          cp candidate.html index.html
+          if [ -z "$(git status --porcelain -- data-static.js app.js index.html)" ]; then exit 0; fi
           git config user.name "dashboard-audit-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data-static.js app.js
-          git commit -m "Generate audited production assets"
+          git add data-static.js app.js index.html
+          git commit -m "Publish audited dashboard production build"
           git push
