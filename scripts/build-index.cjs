@@ -1,0 +1,14 @@
+const fs=require('fs');
+let s=fs.readFileSync('index.html','utf8');
+if(!/name="robots"/.test(s))s=s.replace('<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">','<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">');
+s=s.replace('<span class="muted">Month</span><select id="month">','<label class="muted" for="month">Month</label><select id="month" aria-label="Statement month">');
+s=s.replace('<div class="tabs">','<div class="tabs" role="tablist" aria-label="Dashboard sections">');
+s=s.replaceAll('<button class="tab ','<button type="button" role="tab" class="tab ');
+s=s.replaceAll('<button class="tab"','<button type="button" role="tab" class="tab"');
+s=s.replace('<div id="app">Loading dashboard…</div>','<div id="app" aria-live="polite">Loading dashboard…</div><div id="dataVersion" class="note" style="margin-top:16px;text-align:center"></div>');
+s=s.replace('<button class="close" id="closeModal">×</button>','<button type="button" class="close" id="closeModal" aria-label="Close dialog">×</button>');
+if(!s.includes(':focus-visible'))s=s.replace('@media(max-width:800px)',`button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--rose2);outline-offset:2px}\n@media(max-width:800px)`);
+s=s.replace(/<script src="data-v4-0\.js[^\n]*?<script src="app-v5\.js[^\n]*?<\/script>/,'<script src="data-static.js?v=20260809a"></script><script src="app.js?v=20260809a"></script>');
+if(!s.includes('data-static.js'))throw new Error('Production script replacement failed');
+fs.writeFileSync('candidate.html',s);
+console.log('Wrote candidate.html');
