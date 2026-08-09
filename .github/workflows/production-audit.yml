@@ -36,9 +36,36 @@ jobs:
       - name: Publish only after all audits pass
         run: |
           cp candidate.html index.html
-          if [ -z "$(git status --porcelain -- data-static.js app.js index.html)" ]; then exit 0; fi
-          git config user.name "dashboard-audit-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add data-static.js app.js index.html
-          git commit -m "Publish audited dashboard production build"
-          git push
+          if [ -n "$(git status --porcelain -- data-static.js app.js index.html)" ]; then
+            git config user.name "dashboard-audit-bot"
+            git config user.email "actions@users.noreply.github.com"
+            git add data-static.js app.js index.html
+            git commit -m "Publish audited dashboard production build"
+            git push
+          fi
+      - name: Wait for Netlify production deployment
+        run: |
+          LIVE='https://loraine-money-dashboard.netlify.app/'
+          ok=0
+          for i in $(seq 1 30); do
+            HTML="$(curl -fsSL --max-time 15 "${LIVE}?audit=$(date +%s)" || true)"
+            if printf '%s' "$HTML" | grep -q 'data-static.js?v=20260809a' && printf '%s' "$HTML" | grep -q 'app.js?v=20260809a'; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo 'Netlify did not publish the audited production assets within the verification window.' >&2
+            exit 1
+          fi
+          curl -fsSL --max-time 20 "${LIVE}data-static.js?v=20260809a" >/tmp/live-data.js
+          curl -fsSL --max-time 20 "${LIVE}app.js?v=20260809a" >/tmp/live-app.js
+          test -s /tmp/live-data.js
+          test -s /tmp/live-app.js
+          grep -q 'RAW_MONEY_DATA' /tmp/live-data.js
+          grep -q 'NETFLIX' /tmp/live-app.js
+      - name: Browser smoke test live Netlify production
+        env:
+          DASHBOARD_URL: https://loraine-money-dashboard.netlify.app/?fresh=production-audit
+        run: node scripts/browser-smoke.mjs
