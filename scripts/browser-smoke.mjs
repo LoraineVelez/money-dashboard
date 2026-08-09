@@ -12,16 +12,22 @@ async function cleanPage(browser,viewport){
  assert.match(await page.locator('#dataVersion').innerText(),/Data through July 2026/);
  return {context,page,errors};
 }
+async function assertNoViewportOverflow(page,label){
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),`${label} overflows viewport`);
+}
 const browser=await chromium.launch({headless:true});
 try{
  const {context,page,errors}=await cleanPage(browser,{width:1280,height:900});
+ await assertNoViewportOverflow(page,'desktop');
+ assert.equal((await page.locator('#undoBtn').innerText()).trim(),'↶','undo should be icon only');
+ assert.equal((await page.locator('#redoBtn').innerText()).trim(),'↷','redo should be icon only');
  const values=await page.locator('#month option').evaluateAll(os=>os.map(o=>o.value));
  for(const v of values){await page.selectOption('#month',v);await page.waitForTimeout(20);assert.equal(await page.locator('text=Dashboard error').count(),0,`month ${v} failed`)}
  await page.selectOption('#month','2026-07');
  for(const [label,needle] of [['Big picture','Current cash'],['Month by month','Starting cash'],['Transactions','Transactions ·'],['Accounts','Cash accounts'],['Rules','Category rules']]){
-  await nav(page,label).click();assert.match(await page.locator('#app').innerText(),new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  await nav(page,label).click();assert.match(await page.locator('#app').innerText(),new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));await assertNoViewportOverflow(page,'desktop '+label);
  }
- await nav(page,'Upcoming').click();assert.match(await page.locator('#app').innerText(),/Upcoming ·/);assert.ok(await page.locator('.calendargrid').count(),'upcoming calendar missing');assert.ok(await page.locator('.aireview').count(),'recurring review section missing');assert.ok(await page.locator('#refreshRecurring').count(),'refresh scan control missing');
+ await nav(page,'Upcoming').click();assert.match(await page.locator('#app').innerText(),/Upcoming ·/);assert.ok(await page.locator('.calendargrid').count(),'upcoming calendar missing');assert.ok(await page.locator('.aireview').count(),'recurring review section missing');assert.ok(await page.locator('#refreshRecurring').count(),'refresh scan control missing');await assertNoViewportOverflow(page,'desktop Upcoming');
  await page.locator('#refreshRecurring').click();assert.match(await page.locator('.scanstatus').innerText(),/Refreshed\. Rechecked all/);
  const billCount=await page.locator('.billrow').count();assert.ok(billCount>0,'no unpaid recurring bills detected from statement history');
  const due=page.locator('.dueinput').first();const oldDue=await due.inputValue();const oldDay=Number(oldDue.slice(-2)),newDay=oldDay===15?16:15;const newDue=oldDue.slice(0,-2)+String(newDay).padStart(2,'0');await due.fill(newDue);await due.dispatchEvent('change');assert.equal(Number((await page.locator('.dueinput').first().inputValue()).slice(-2)),newDay,'due date edit did not persist');
@@ -49,8 +55,21 @@ try{
  await page.locator('#categoryFilter').selectOption({label:'All'});if(await page.locator('#reviewNow').count()){await page.locator('#reviewNow').click();assert.equal(await page.locator('#categoryFilter').inputValue(),'Needs Review')}
  await nav(page,'Month by month').click();if(await page.locator('.pie-slice').count()){const slice=page.locator('.pie-slice').first();assert.ok(((await slice.locator('title').textContent())||'').length>3,'pie slice tooltip missing');await slice.click();assert.ok(await page.locator('#modal').evaluate(d=>d.open));await page.locator('#closeModal').click()}
  if(await page.locator('.legendbtn').count()){await page.locator('.legendbtn').first().click();assert.ok(await page.locator('#modal').evaluate(d=>d.open));await page.locator('#closeModal').click()}
+ const beforeTheme=await page.locator('html').getAttribute('data-theme');await page.locator('#themeToggle').click();const afterTheme=await page.locator('html').getAttribute('data-theme');assert.notEqual(afterTheme,beforeTheme,'theme toggle should still work');await assertNoViewportOverflow(page,'desktop dark/light theme');
  assert.deepEqual(errors,[],errors.join('\n'));await context.close();
- const mobile=await cleanPage(browser,{width:390,height:844});assert.ok(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'mobile body overflows viewport');await nav(mobile.page,'Upcoming').click();assert.match(await mobile.page.locator('#app').innerText(),/Upcoming ·/);assert.ok(await mobile.page.locator('#refreshRecurring').count(),'mobile refresh scan missing');assert.ok(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'mobile Upcoming view overflows viewport');await nav(mobile.page,'Accounts').click();assert.match(await mobile.page.locator('#app').innerText(),/Cash accounts/);assert.deepEqual(mobile.errors,[],mobile.errors.join('\n'));await mobile.context.close();
+
+ for(const viewport of [{width:390,height:844,name:'mobile 390'},{width:360,height:800,name:'mobile 360'},{width:768,height:1024,name:'tablet'}]){
+  const m=await cleanPage(browser,{width:viewport.width,height:viewport.height});
+  await assertNoViewportOverflow(m.page,viewport.name+' initial');
+  assert.equal((await m.page.locator('#undoBtn').innerText()).trim(),'↶',viewport.name+' undo text');
+  assert.equal((await m.page.locator('#redoBtn').innerText()).trim(),'↷',viewport.name+' redo text');
+  for(const label of ['Big picture','Month by month','Transactions','Accounts','Upcoming','Rules']){
+    await nav(m.page,label).click();await m.page.waitForTimeout(20);await assertNoViewportOverflow(m.page,viewport.name+' '+label);
+  }
+  await nav(m.page,'Upcoming').click();assert.match(await m.page.locator('#app').innerText(),/Upcoming ·/);assert.ok(await m.page.locator('#refreshRecurring').count(),viewport.name+' refresh scan missing');
+  await nav(m.page,'Accounts').click();assert.match(await m.page.locator('#app').innerText(),/Cash accounts/);
+  assert.deepEqual(m.errors,[],m.errors.join('\n'));await m.context.close();
+ }
  if(!process.env.DASHBOARD_URL){const c=await browser.newContext();const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.route('**/data-static.js*',r=>r.abort());await p.goto(BASE,{waitUntil:'networkidle'});assert.match(await p.locator('#app').innerText(),/Dashboard error[\s\S]*Dashboard data failed to load/);assert.deepEqual(errs,[]);await c.close()}
- console.log('Browser smoke passed: refreshable recurring review, auto-clearing paid reminders, editable due dates, months, desktop/mobile, navigation, filters, charts, editing, undo/redo, rules, card/loan details, and graceful data failure.');
+ console.log('Browser smoke passed: visual overflow checks at desktop/tablet/mobile, icon-only history controls, theme switching, refreshable recurring review, auto-clearing paid reminders, editable due dates, months, navigation, filters, charts, editing, undo/redo, rules, card/loan details, and graceful data failure.');
 } finally {await browser.close();}
