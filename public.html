@@ -20,18 +20,22 @@
    if(!win||!doc)return;
    const style=doc.createElement('style');
    style.textContent=`
-     #undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"]{display:none!important}
+     #undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"],.paidbtn{display:none!important}
      .editor,.scopebox{display:none!important}
      .txrow{cursor:default!important}
+     .dueinput{pointer-events:none!important;opacity:.72}
    `;
    doc.head.appendChild(style);
-   const blockedSelector='#undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"]';
+   const blockedSelector='#undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"],.paidbtn,.dueinput';
    doc.addEventListener('click',e=>{
      const blocked=e.target.closest&&e.target.closest(blockedSelector);
      if(blocked){e.preventDefault();e.stopImmediatePropagation();return false;}
    },true);
+   doc.addEventListener('change',e=>{
+     if(e.target.matches&&e.target.matches('.dueinput')){e.preventDefault();e.stopImmediatePropagation();return false;}
+   },true);
    const protect=()=>{
-     doc.querySelectorAll('#undoBtn,#redoBtn,#saveCat,[data-delete-rule]').forEach(el=>{el.disabled=true;el.setAttribute('aria-disabled','true')});
+     doc.querySelectorAll('#undoBtn,#redoBtn,#saveCat,[data-delete-rule],.paidbtn,.dueinput').forEach(el=>{el.disabled=true;el.setAttribute('aria-disabled','true')});
      doc.querySelectorAll('.editor,.scopebox,[data-view="rules"]').forEach(el=>el.style.display='none');
    };
    protect();
