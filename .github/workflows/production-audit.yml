@@ -1,0 +1,30 @@
+name: Production audit
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build static financial data
+        run: node scripts/build-static-data.cjs
+      - name: Reconcile financial data
+        run: node scripts/audit-data.cjs
+      - name: Syntax check active app
+        run: |
+          if [ -f app.js ]; then node --check app.js; fi
+      - name: Commit generated static data
+        run: |
+          if git diff --quiet -- data-static.js; then exit 0; fi
+          git config user.name "dashboard-audit-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data-static.js
+          git commit -m "Generate verified static dashboard data"
+          git push
