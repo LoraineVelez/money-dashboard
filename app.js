@@ -59,13 +59,17 @@ function effective(t){
  const one=manualOverride(t); if(one)return one;
  const src=source(t).toUpperCase();
  if(/RENE\s+VELEZ/.test(src))return'Gifts & Donations';
- if(/NETFLIX\.COM/.test(src))return'Subscriptions & Digital';
- const rule=merchantRule(t); if(rule)return rule;
- if(isP2P(t))return'Needs Review';
  if(/JWALES|JOHNSON.*WALES/.test(src))return'Education';
  if(/WHOLE ?FOODS/.test(src))return'Groceries & Dining';
+ if(/UBER ?EATS|MCDONALD|PANERA|CHIPOTLE|POPEYES|WAWA/.test(src))return'Groceries & Dining';
+ if(/HOMEAGLOW/.test(src))return'Home';
+ if(/PECO/.test(src))return'Bills & Utilities';
+ if(/E-?ZPASS|EZPASS/.test(src))return'Vehicle & Transportation';
+ if(/NETFLIX|SPOTIFY|ADOBE|FIVERR/.test(src))return'Subscriptions & Digital';
  if(/AMAZON PRIME/.test(src))return'Subscriptions & Digital';
- if(/AMAZON|AMZN/.test(src))return'Shopping';
+ if(/TARGET|KOHLS|KOHL'S|AMAZON|AMZN/.test(src))return'Shopping';
+ const rule=merchantRule(t); if(rule)return rule;
+ if(isP2P(t))return'Needs Review';
  if(t.amount<0&&Math.abs(Math.abs(t.amount)-350)<.01&&/MEMBERS ?1ST|MEMBERS FIRST/.test(src))return'Vehicle & Transportation';
  return canonical(t.category);
 }
