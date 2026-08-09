@@ -15,16 +15,8 @@
   function polish(){
     const undo=document.getElementById('undoBtn');
     const redo=document.getElementById('redoBtn');
-    if(undo){
-      undo.textContent='↶';
-      undo.setAttribute('aria-label','Undo last change');
-      undo.setAttribute('title','Undo last change');
-    }
-    if(redo){
-      redo.textContent='↷';
-      redo.setAttribute('aria-label','Redo last change');
-      redo.setAttribute('title','Redo last change');
-    }
+    if(undo){undo.textContent='↶';undo.setAttribute('aria-label','Undo last change');undo.removeAttribute('title')}
+    if(redo){redo.textContent='↷';redo.setAttribute('aria-label','Redo last change');redo.removeAttribute('title')}
   }
   polish();
   new MutationObserver(polish).observe(document.body,{childList:true,subtree:true});
