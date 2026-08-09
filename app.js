@@ -159,7 +159,7 @@ function render(){const app=$('#app');app.innerHTML=view==='overview'?overview()
 
 order.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=D[k].label;sel.appendChild(o)});sel.value=latest;
 const tabs=$('.tabs');if(!$('.tab[data-view="rules"]'))tabs.insertAdjacentHTML('beforeend','<button class="tab" data-view="rules">Rules</button>');
-const controls=$('.controls');controls.insertAdjacentHTML('afterbegin','<button id="undoBtn" class="iconbtn" title="Undo last change">↶ Undo</button><button id="redoBtn" class="iconbtn" title="Redo last change">↷ Redo</button>');
+const controls=$('.controls');controls.insertAdjacentHTML('afterbegin','<button id="undoBtn" class="iconbtn" aria-label="Undo last change">↶</button><button id="redoBtn" class="iconbtn" aria-label="Redo last change">↷</button>');
 $('#undoBtn').onclick=undo;$('#redoBtn').onclick=redo;
 $$('.tab').forEach(b=>b.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');view=b.dataset.view;reviewOnly=false;render()});
 sel.onchange=()=>{search='';catFilter='All';reviewOnly=false;render()};
