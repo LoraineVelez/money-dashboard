@@ -11,6 +11,7 @@ mustReplace('P2P classifier',/function isP2P\(t\)\{return \/VENMO\|ZELLE\|CASH \
 mustReplace('effective categorization',/function effective\(t\)\{[\s\S]*?\n\}\nfunction isEdited/,`function effective(t){
  const one=manualOverride(t); if(one)return one;
  const src=source(t).toUpperCase();
+ if(t.amount>0&&/DIVIDEND|INTEREST/.test(src))return'Income';
  if(/RENE\\s+VELEZ/.test(src))return'Gifts & Donations';
  if(/JWALES|JOHNSON.*WALES/.test(src))return'Education';
  if(/WHOLE ?FOODS/.test(src))return'Groceries & Dining';
@@ -53,5 +54,5 @@ if(/DecompressionStream|DATA_GZ/.test(s))throw new Error('Runtime decompression 
 if(/const VERIFIED=/.test(s))throw new Error('Duplicate hard-coded bank balances still present');
 if(/payments left/.test(s))throw new Error('Unqualified loan payment estimate still present');
 if(/↶ Undo|↷ Redo/.test(s))throw new Error('Visible undo/redo labels still present');
-if(!/HOMEAGLOW/.test(s)||!/PECO/.test(s)||!/ADOBE/.test(s)||!/UBER \?EATS/.test(s))throw new Error('Known user categorization rules missing');
+if(!/DIVIDEND\|INTEREST/.test(s)||!/HOMEAGLOW/.test(s)||!/PECO/.test(s)||!/ADOBE/.test(s)||!/UBER \?EATS/.test(s))throw new Error('Known user categorization rules missing');
 fs.writeFileSync('app.js',s);console.log('Wrote app.js',s.length,'bytes');
