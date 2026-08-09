@@ -8,7 +8,9 @@ s=s.replaceAll('<button class="tab"','<button type="button" role="tab" class="ta
 s=s.replace('<div id="app">Loading dashboard…</div>','<div id="app" aria-live="polite">Loading dashboard…</div><div id="dataVersion" class="note" style="margin-top:16px;text-align:center"></div>');
 s=s.replace('<button class="close" id="closeModal">×</button>','<button type="button" class="close" id="closeModal" aria-label="Close dialog">×</button>');
 if(!s.includes(':focus-visible'))s=s.replace('@media(max-width:800px)',`button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--rose2);outline-offset:2px}\n@media(max-width:800px)`);
-s=s.replace(/<script src="data-v4-0\.js[^\n]*?<script src="app-v5\.js[^\n]*?<\/script>/,'<script src="data-static.js?v=20260809a"></script><script src="app.js?v=20260809a"></script>');
-if(!s.includes('data-static.js'))throw new Error('Production script replacement failed');
+const prod='<script src="data-static.js?v=20260809a"></script><script src="app.js?v=20260809a"></script>';
+if(/<script src="data-v4-0\.js/.test(s))s=s.replace(/<script src="data-v4-0\.js[^\n]*?<script src="app-v5\.js[^\n]*?<\/script>/,prod);
+else if(/<script src="data-static\.js/.test(s))s=s.replace(/<script src="data-static\.js[^\n]*?<script src="app\.js[^\n]*?<\/script>/,prod);
+if(!s.includes('data-static.js')||s.includes('data-v4-0.js'))throw new Error('Production script replacement failed');
 fs.writeFileSync('candidate.html',s);
 console.log('Wrote candidate.html');
