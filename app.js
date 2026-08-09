@@ -58,6 +58,7 @@ function merchantRule(t){if(isP2P(t))return null;const v=localStorage.getItem(me
 function effective(t){
  const one=manualOverride(t); if(one)return one;
  const src=source(t).toUpperCase();
+ if(t.amount>0&&/DIVIDEND|INTEREST/.test(src))return'Income';
  if(/RENE\s+VELEZ/.test(src))return'Gifts & Donations';
  if(/JWALES|JOHNSON.*WALES/.test(src))return'Education';
  if(/WHOLE ?FOODS/.test(src))return'Groceries & Dining';
