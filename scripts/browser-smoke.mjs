@@ -17,7 +17,7 @@ try{
  const values=await page.locator('#month option').evaluateAll(os=>os.map(o=>o.value));
  for(const v of values){await page.selectOption('#month',v);await page.waitForTimeout(20);assert.equal(await page.locator('text=Dashboard error').count(),0,`month ${v} failed`)}
  await page.selectOption('#month','2026-07');
- for(const [label,needle] of [['Big picture','Current cash'],['Month by month','Monthly category activity'],['Transactions','Transactions ·'],['Accounts','Cash accounts'],['Rules','Category rules']]){
+ for(const [label,needle] of [['Big picture','Current cash'],['Month by month','Starting cash'],['Transactions','Transactions ·'],['Accounts','Cash accounts'],['Rules','Category rules']]){
   await page.getByRole('tab',{name:label}).click();assert.match(await page.locator('#app').innerText(),new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  }
  await page.getByRole('tab',{name:'Transactions'}).click();
