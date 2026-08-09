@@ -43,9 +43,11 @@ s=s.replaceAll("<div class=\"note\">As of ${c.asof}</div>","<div class=\"note\">
 s=s.replaceAll(" · ${Math.ceil(auto/AUTO_PAYMENT)} payments left"," · roughly ${Math.ceil(auto/AUTO_PAYMENT)} payments at ${fmt2(AUTO_PAYMENT)} (ignores interest)");
 s=s.replaceAll(" · about ${Math.ceil(auto/AUTO_PAYMENT)} payments left"," · roughly ${Math.ceil(auto/AUTO_PAYMENT)} payments at ${fmt2(AUTO_PAYMENT)} (ignores interest)");
 s=s.replaceAll("card('Payments left','~'+Math.ceil(AUTOLOAN.at(-1).balance/AUTO_PAYMENT))","card('Rough payments','~'+Math.ceil(AUTOLOAN.at(-1).balance/AUTO_PAYMENT),'Ignores interest')");
+mustReplace('icon-only history controls',"<button id=\"undoBtn\" class=\"iconbtn\" title=\"Undo last change\">↶ Undo</button><button id=\"redoBtn\" class=\"iconbtn\" title=\"Redo last change\">↷ Redo</button>","<button id=\"undoBtn\" class=\"iconbtn\" aria-label=\"Undo last change\">↶</button><button id=\"redoBtn\" class=\"iconbtn\" aria-label=\"Redo last change\">↷</button>");
 mustReplace('data version stamp',/render\(\);\n\}\s*catch\(e\)/,"render();\nconst stamp=document.getElementById('dataVersion');if(stamp)stamp.textContent='Data through July 2026 · audited '+DATA_VERSION;\n}catch(e)");
 if(/DecompressionStream|DATA_GZ/.test(s))throw new Error('Runtime decompression still present in app.js');
 if(/const VERIFIED=/.test(s))throw new Error('Duplicate hard-coded bank balances still present');
 if(/payments left/.test(s))throw new Error('Unqualified loan payment estimate still present');
+if(/↶ Undo|↷ Redo/.test(s))throw new Error('Visible undo/redo labels still present');
 if(!/RENE\\s\+VELEZ/.test(s)||!/NETFLIX\\\.COM/.test(s))throw new Error('Fixed categorization rules missing');
 fs.writeFileSync('app.js',s);console.log('Wrote app.js',s.length,'bytes');
