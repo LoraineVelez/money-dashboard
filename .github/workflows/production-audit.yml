@@ -13,18 +13,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Build static financial data
-        run: node scripts/build-static-data.cjs
+      - name: Build stable production assets
+        run: |
+          node scripts/build-static-data.cjs
+          node scripts/build-app.cjs
       - name: Reconcile financial data
         run: node scripts/audit-data.cjs
       - name: Syntax check active app
+        run: node --check app.js
+      - name: Commit generated production assets
         run: |
-          if [ -f app.js ]; then node --check app.js; fi
-      - name: Commit generated static data
-        run: |
-          if [ -z "$(git status --porcelain -- data-static.js)" ]; then exit 0; fi
+          if [ -z "$(git status --porcelain -- data-static.js app.js)" ]; then exit 0; fi
           git config user.name "dashboard-audit-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data-static.js
-          git commit -m "Generate verified static dashboard data"
+          git add data-static.js app.js
+          git commit -m "Generate audited production assets"
           git push
