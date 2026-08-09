@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
-const BASE='http://127.0.0.1:4173/candidate.html';
+const BASE=process.env.DASHBOARD_URL||'http://127.0.0.1:4173/candidate.html';
+const nav=(page,label)=>page.locator('.tab',{hasText:label}).first();
 async function cleanPage(browser,viewport){
  const context=await browser.newContext({viewport});const page=await context.newPage();const errors=[];
  page.on('pageerror',e=>errors.push('pageerror: '+e.message));
@@ -18,9 +19,9 @@ try{
  for(const v of values){await page.selectOption('#month',v);await page.waitForTimeout(20);assert.equal(await page.locator('text=Dashboard error').count(),0,`month ${v} failed`)}
  await page.selectOption('#month','2026-07');
  for(const [label,needle] of [['Big picture','Current cash'],['Month by month','Starting cash'],['Transactions','Transactions ·'],['Accounts','Cash accounts'],['Rules','Category rules']]){
-  await page.getByRole('tab',{name:label}).click();assert.match(await page.locator('#app').innerText(),new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  await nav(page,label).click();assert.match(await page.locator('#app').innerText(),new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  }
- await page.getByRole('tab',{name:'Transactions'}).click();
+ await nav(page,'Transactions').click();
  await page.locator('#search').fill('THIS-WILL-NOT-MATCH-ANYTHING');assert.equal(await page.locator('.txrow').count(),0);
  let netflixFound=false;
  for(const v of values){await page.selectOption('#month',v);await page.locator('#search').fill('NETFLIX.COM');if(await page.locator('.txrow').count()){netflixFound=true;assert.match(await page.locator('.txrow').first().innerText(),/Subscriptions & Digital/);break}}
@@ -34,12 +35,18 @@ try{
  const row=page.locator('.txrow').first();await row.click();const original=await page.locator('#catEdit').inputValue();
  const replacement=original==='Home'?'Entertainment':'Home';await page.locator('#catEdit').selectOption({label:replacement});await page.locator('input[name="scope"][value="one"]').check();await page.locator('#saveCat').click();
  assert.match(await page.locator('.txrow').first().innerText(),new RegExp(replacement));await page.locator('#undoBtn').click();assert.doesNotMatch(await page.locator('.txrow').first().innerText(),new RegExp(replacement));await page.locator('#redoBtn').click();assert.match(await page.locator('.txrow').first().innerText(),new RegExp(replacement));
- await page.locator('.txrow').first().click();await page.locator('#catEdit').selectOption({label:'Personal Care'});await page.locator('input[name="scope"][value="merchant"]').check();await page.locator('#saveCat').click();await page.getByRole('tab',{name:'Rules'}).click();assert.ok(await page.locator('[data-delete-rule]').count()>0,'merchant rule not created');await page.locator('[data-delete-rule]').first().click();
- await page.getByRole('tab',{name:'Big picture'}).click();const cc=page.locator('[data-action="creditMonth"]');assert.ok(await cc.count()>0,'credit-card detail trigger missing');await cc.first().click();assert.match(await page.locator('#modalBody').innerText(),/Barclays JetBlue Plus/);assert.match(await page.locator('#modalBody').innerText(),/Known balance total/);await page.locator('#closeModal').click();
+ await page.locator('.txrow').first().click();await page.locator('#catEdit').selectOption({label:'Personal Care'});await page.locator('input[name="scope"][value="merchant"]').check();await page.locator('#saveCat').click();await nav(page,'Rules').click();assert.ok(await page.locator('[data-delete-rule]').count()>0,'merchant rule not created');await page.locator('[data-delete-rule]').first().click();
+ await nav(page,'Big picture').click();const cc=page.locator('[data-action="creditMonth"]');assert.ok(await cc.count()>0,'credit-card detail trigger missing');await cc.first().click();assert.match(await page.locator('#modalBody').innerText(),/Barclays JetBlue Plus/);assert.match(await page.locator('#modalBody').innerText(),/Known balance total/);await page.locator('#closeModal').click();
  const auto=page.locator('[data-action="autoLoan"]');if(await auto.count()){await auto.first().click();assert.match(await page.locator('#modalBody').innerText(),/Rough payments/);await page.locator('#closeModal').click()}
- await page.getByRole('tab',{name:'Transactions'}).click();const hide=page.locator('#hideInternal');await hide.check();assert.equal(await page.evaluate(()=>localStorage.getItem('hideInternalTransfers')),'1');
+ await nav(page,'Transactions').click();const hide=page.locator('#hideInternal');if(!(await hide.isChecked()))await hide.check();assert.equal(await page.evaluate(()=>localStorage.getItem('hideInternalTransfers')),'1');
+ // Category filter and review shortcut.
+ await page.locator('#categoryFilter').selectOption({label:'Shopping'});assert.ok(await page.locator('.txrow').count()>0,'Shopping category filter returned nothing');
+ await page.locator('#categoryFilter').selectOption('all');if(await page.locator('#reviewNow').count()){await page.locator('#reviewNow').click();assert.equal(await page.locator('#categoryFilter').inputValue(),'Needs Review')}
+ // Chart slice and legend open category detail modal; SVG title provides tooltip text.
+ await nav(page,'Month by month').click();if(await page.locator('.pie-slice').count()){const slice=page.locator('.pie-slice').first();assert.ok((await slice.locator('title').innerText()).length>3,'pie slice tooltip missing');await slice.click();assert.ok(await page.locator('#modal').evaluate(d=>d.open));await page.locator('#closeModal').click()}
+ if(await page.locator('.legendbtn').count()){await page.locator('.legendbtn').first().click();assert.ok(await page.locator('#modal').evaluate(d=>d.open));await page.locator('#closeModal').click()}
  assert.deepEqual(errors,[],errors.join('\n'));await context.close();
- const mobile=await cleanPage(browser,{width:390,height:844});assert.ok(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'mobile body overflows viewport');await mobile.page.getByRole('tab',{name:'Accounts'}).click();assert.match(await mobile.page.locator('#app').innerText(),/Cash accounts/);assert.deepEqual(mobile.errors,[],mobile.errors.join('\n'));await mobile.context.close();
- const c=await browser.newContext();const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.route('**/data-static.js*',r=>r.abort());await p.goto(BASE,{waitUntil:'networkidle'});assert.match(await p.locator('#app').innerText(),/Dashboard error[\s\S]*Dashboard data failed to load/);assert.deepEqual(errs,[]);await c.close();
- console.log('Browser smoke passed: desktop, mobile, navigation, filters, editing, undo/redo, rules, card/loan details, and graceful data failure.');
+ const mobile=await cleanPage(browser,{width:390,height:844});assert.ok(await mobile.page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),'mobile body overflows viewport');await nav(mobile.page,'Accounts').click();assert.match(await mobile.page.locator('#app').innerText(),/Cash accounts/);assert.deepEqual(mobile.errors,[],mobile.errors.join('\n'));await mobile.context.close();
+ if(!process.env.DASHBOARD_URL){const c=await browser.newContext();const p=await c.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));await p.route('**/data-static.js*',r=>r.abort());await p.goto(BASE,{waitUntil:'networkidle'});assert.match(await p.locator('#app').innerText(),/Dashboard error[\s\S]*Dashboard data failed to load/);assert.deepEqual(errs,[]);await c.close()}
+ console.log('Browser smoke passed: months, desktop/mobile, navigation, filters, charts, editing, undo/redo, rules, card/loan details, and graceful data failure.');
 } finally {await browser.close();}
