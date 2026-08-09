@@ -25,7 +25,7 @@ try{
  await page.locator('#refreshRecurring').click();assert.match(await page.locator('.scanstatus').innerText(),/Refreshed\. Rechecked all/);
  const billCount=await page.locator('.billrow').count();assert.ok(billCount>0,'no unpaid recurring bills detected from statement history');
  const due=page.locator('.dueinput').first();const oldDue=await due.inputValue();const oldDay=Number(oldDue.slice(-2)),newDay=oldDay===15?16:15;const newDue=oldDue.slice(0,-2)+String(newDay).padStart(2,'0');await due.fill(newDue);await due.dispatchEvent('change');assert.equal(Number((await page.locator('.dueinput').first().inputValue()).slice(-2)),newDay,'due date edit did not persist');
- const firstKey=await page.locator('.paidbtn').first().getAttribute('data-paid-key');await page.locator('.paidbtn').first().click();assert.equal(await page.locator(`.paidbtn[data-paid-key="${CSS.escape(firstKey)}"]`).count(),0,'paid recurring item should disappear from Upcoming');
+ const firstKey=await page.locator('.paidbtn').first().getAttribute('data-paid-key');const beforePaid=await page.locator('.billrow').count();await page.locator('.paidbtn').first().click();assert.equal(await page.locator('.billrow').count(),beforePaid-1,'paid recurring item should disappear from Upcoming');
  await page.evaluate(key=>localStorage.removeItem('billPaid:'+new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+':'+key),firstKey).catch(()=>{});
  await nav(page,'Transactions').click();
  await page.locator('#search').fill('THIS-WILL-NOT-MATCH-ANYTHING');assert.equal(await page.locator('.txrow').count(),0);
