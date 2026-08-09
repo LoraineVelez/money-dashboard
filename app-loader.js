@@ -1,0 +1,1 @@
+try{(0,eval)(window.__MONEY_APP);delete window.__MONEY_APP;}catch(e){console.error(e);document.getElementById("app").innerHTML="<div class=\"card\"><h2>Dashboard error</h2><p>"+String(e.message||e)+"</p></div>";}
