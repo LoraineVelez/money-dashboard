@@ -41,6 +41,7 @@ s=s.replaceAll("'No change from previous month'","'No change in known balances f
 s=s.replaceAll("<td>${c.asof}</td><td class=\"amount\">${fmt2(c.balance)}</td>","<td>${c.asof}${c.status==='inferred'?' · inferred':''}</td><td class=\"amount\">${fmt2(c.balance)}</td>");
 s=s.replaceAll("<div class=\"note\">As of ${c.asof}</div>","<div class=\"note\">As of ${c.asof}${c.status==='inferred'?' · inferred':''}</div>");
 s=s.replaceAll(" · ${Math.ceil(auto/AUTO_PAYMENT)} payments left"," · roughly ${Math.ceil(auto/AUTO_PAYMENT)} payments at ${fmt2(AUTO_PAYMENT)} (ignores interest)");
+s=s.replaceAll(" · about ${Math.ceil(auto/AUTO_PAYMENT)} payments left"," · roughly ${Math.ceil(auto/AUTO_PAYMENT)} payments at ${fmt2(AUTO_PAYMENT)} (ignores interest)");
 s=s.replaceAll("card('Payments left','~'+Math.ceil(AUTOLOAN.at(-1).balance/AUTO_PAYMENT))","card('Rough payments','~'+Math.ceil(AUTOLOAN.at(-1).balance/AUTO_PAYMENT),'Ignores interest')");
 mustReplace('data version stamp',/render\(\);\n\}\s*catch\(e\)/,"render();\nconst stamp=document.getElementById('dataVersion');if(stamp)stamp.textContent='Data through July 2026 · audited '+DATA_VERSION;\n}catch(e)");
 if(/DecompressionStream|DATA_GZ/.test(s))throw new Error('Runtime decompression still present in app.js');
