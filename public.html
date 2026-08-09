@@ -20,13 +20,13 @@
    if(!win||!doc)return;
    const style=doc.createElement('style');
    style.textContent=`
-     #undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"],.paidbtn,.removebill{display:none!important}
+     #undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"],.paidbtn,.removebill,.approvebill{display:none!important}
      .editor,.scopebox{display:none!important}
      .txrow{cursor:default!important}
      .dueinput{pointer-events:none!important;opacity:.72}
    `;
    doc.head.appendChild(style);
-   const blockedSelector='#undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"],.paidbtn,.removebill,.dueinput';
+   const blockedSelector='#undoBtn,#redoBtn,#saveCat,[data-delete-rule],[data-view="rules"],.paidbtn,.removebill,.approvebill,.dueinput';
    doc.addEventListener('click',e=>{
      const blocked=e.target.closest&&e.target.closest(blockedSelector);
      if(blocked){e.preventDefault();e.stopImmediatePropagation();return false;}
@@ -35,7 +35,7 @@
      if(e.target.matches&&e.target.matches('.dueinput')){e.preventDefault();e.stopImmediatePropagation();return false;}
    },true);
    const protect=()=>{
-     doc.querySelectorAll('#undoBtn,#redoBtn,#saveCat,[data-delete-rule],.paidbtn,.removebill,.dueinput').forEach(el=>{el.disabled=true;el.setAttribute('aria-disabled','true')});
+     doc.querySelectorAll('#undoBtn,#redoBtn,#saveCat,[data-delete-rule],.paidbtn,.removebill,.approvebill,.dueinput').forEach(el=>{el.disabled=true;el.setAttribute('aria-disabled','true')});
      doc.querySelectorAll('.editor,.scopebox,[data-view="rules"]').forEach(el=>el.style.display='none');
    };
    protect();
