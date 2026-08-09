@@ -39,10 +39,8 @@ try{
  await nav(page,'Big picture').click();const cc=page.locator('[data-action="creditMonth"]');assert.ok(await cc.count()>0,'credit-card detail trigger missing');await cc.first().click();assert.match(await page.locator('#modalBody').innerText(),/Barclays JetBlue Plus/);assert.match(await page.locator('#modalBody').innerText(),/Known balance total/);await page.locator('#closeModal').click();
  const auto=page.locator('[data-action="autoLoan"]');if(await auto.count()){await auto.first().click();assert.match(await page.locator('#modalBody').innerText(),/Rough payments/);await page.locator('#closeModal').click()}
  await nav(page,'Transactions').click();const hide=page.locator('#hideInternal');if(!(await hide.isChecked()))await hide.check();assert.equal(await page.evaluate(()=>localStorage.getItem('hideInternalTransfers')),'1');
- // Category filter and review shortcut.
  await page.locator('#categoryFilter').selectOption({label:'Shopping'});assert.ok(await page.locator('.txrow').count()>0,'Shopping category filter returned nothing');
- await page.locator('#categoryFilter').selectOption('all');if(await page.locator('#reviewNow').count()){await page.locator('#reviewNow').click();assert.equal(await page.locator('#categoryFilter').inputValue(),'Needs Review')}
- // Chart slice and legend open category detail modal; SVG title provides tooltip text.
+ await page.locator('#categoryFilter').selectOption({label:'All'});if(await page.locator('#reviewNow').count()){await page.locator('#reviewNow').click();assert.equal(await page.locator('#categoryFilter').inputValue(),'Needs Review')}
  await nav(page,'Month by month').click();if(await page.locator('.pie-slice').count()){const slice=page.locator('.pie-slice').first();assert.ok((await slice.locator('title').innerText()).length>3,'pie slice tooltip missing');await slice.click();assert.ok(await page.locator('#modal').evaluate(d=>d.open));await page.locator('#closeModal').click()}
  if(await page.locator('.legendbtn').count()){await page.locator('.legendbtn').first().click();assert.ok(await page.locator('#modal').evaluate(d=>d.open));await page.locator('#closeModal').click()}
  assert.deepEqual(errors,[],errors.join('\n'));await context.close();
