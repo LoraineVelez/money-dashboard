@@ -1,9 +1,8 @@
 
-(async()=>{try{
+(()=>{try{
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const b=atob(window.DATA_GZ||"");const bytes=new Uint8Array(b.length);for(let i=0;i<b.length;i++)bytes[i]=b.charCodeAt(i);
-const ds=new DecompressionStream("gzip");const txt=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).text();
-const R=JSON.parse(txt);
+const R=window.RAW_MONEY_DATA;if(!R)throw new Error('Dashboard data failed to load');
+const DATA_VERSION='2026-08-09';
 
 const VERIFIED={
 '2025-11':{start:8348.48,end:7731.68,ea:[.01,7731.67,0]},
@@ -69,14 +68,16 @@ function manualOverride(t){const v=localStorage.getItem(txKey(t));return v?canon
 function merchantRule(t){if(isP2P(t))return null;const v=localStorage.getItem(merchantKey(t));return v?canonical(v):null}
 function effective(t){
  const one=manualOverride(t); if(one)return one;
+ const src=source(t).toUpperCase();
+ if(/RENE\s+VELEZ/.test(src))return'Gifts & Donations';
+ if(/NETFLIX\.COM/.test(src))return'Subscriptions & Digital';
  const rule=merchantRule(t); if(rule)return rule;
- const s=source(t).toUpperCase();
  if(isP2P(t))return'Needs Review';
- if(/JWALES|JOHNSON.*WALES/.test(s))return'Education';
- if(/WHOLE ?FOODS/.test(s))return'Groceries & Dining';
- if(/AMAZON PRIME/.test(s))return'Subscriptions & Digital';
- if(/AMAZON|AMZN/.test(s))return'Shopping';
- if(t.amount<0&&Math.abs(Math.abs(t.amount)-350)<.01&&/MEMBERS ?1ST|MEMBERS FIRST/.test(s))return'Vehicle & Transportation';
+ if(/JWALES|JOHNSON.*WALES/.test(src))return'Education';
+ if(/WHOLE ?FOODS/.test(src))return'Groceries & Dining';
+ if(/AMAZON PRIME/.test(src))return'Subscriptions & Digital';
+ if(/AMAZON|AMZN/.test(src))return'Shopping';
+ if(t.amount<0&&Math.abs(Math.abs(t.amount)-350)<.01&&/MEMBERS ?1ST|MEMBERS FIRST/.test(src))return'Vehicle & Transportation';
  return canonical(t.category);
 }
 function isEdited(t){return !!manualOverride(t)}
